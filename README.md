@@ -109,7 +109,7 @@ This section documents the diagnostic playbooks and auditing procedures establis
 net use * /delete /y
 
 ```
-###Case Study C: Centralized Security Auditing via Event Viewer
+### Case Study C: Centralized Security Auditing via Event Viewer
 * **The Objective:** Validate identity security enforcement across the domain by mapping, capturing, and reading structural authentication failure logs without relying on end-user narrative.
 
 * **The Diagnostic Pipeline:**
