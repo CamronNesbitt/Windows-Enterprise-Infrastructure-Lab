@@ -15,6 +15,8 @@ This section defines the sandboxed corporate network architecture engineered wit
 ### Network Isolation Context
 The entire system is locked within a private internal network switch daemon inside the hypervisor. This completely isolates the infrastructure from the local home network, providing a safe, compliant environment to test security policies, firewalls, and credential injections without production risk.
 
+---
+
 ## 2. Automated Identity Provisioning (PowerShell Engine)
 This section highlights the software automation layer of the infrastructure, focusing on removing manual administrator latency through modular scripting.
 
@@ -25,7 +27,7 @@ Manually initializing enterprise user accounts via the standard Active Directory
 A custom PowerShell automation pipeline script was authored to parse a raw corporate employee dataset (`HR_Onboard.csv`) containing string fields: `FirstName`, `LastName`, `Department`, `JobTitle`. 
 
 The core scripting logic performs:
-1. **Object Parsing:** An iterative `ForEach-Object` control loop processes each entry.
+1. **Object Parsing:** An iterative loop processes each entry.
 2. **String Manipulation:** Dynamically builds a standard corporate User Principal Name (UPN) using the `first.last` format (e.g., `jane.doe@mylab.local`).
 3. **Cryptographic Conversions:** Transforms temporary alphanumeric password plaintext inputs into highly secure, encrypted system string data structures (`AsSecureString`).
 4. **Organizational Path Evaluation:** Programmatically reads the `Department` parameter to build variable Distinguished Name target path pointers (`OU=$Department,DC=mylab,DC=local`), completely sorting users automatically into nested Active Directory containers.
@@ -64,41 +66,3 @@ foreach ($User in $UserData) {
         Write-Warning "Target structural container path not found for: $TargetOU"
     }
 }
-
-## 3. Data Boundary Enforcement & Share Security (NTFS & RBAC)
-This section details the hardening of network storage systems, demonstrating how to enforce strict corporate data boundaries using nested permissions.
-
-### The Objective
-Configure an SMB network file share (`Company_Share`) hosted on the server so that only validated IT department personnel can access or modify administrative documentation, preventing privilege escalation or data leaks from unauthorized users.
-
-### Security Implementation Strategy
-To prevent administrative sprawl and ensure scalable security, the following access control parameters were implemented:
-* **Disabling File System Inheritance:** Stripped standard top-level directory inheritance rules from the local storage root (`C:\Company_Share`). This removed broad, default domain read/write permissions.
-* **Role-Based Access Control (RBAC):** Created an explicit Active Directory Security Group named `IT_Folders`. Instead of assigning local permissions to individual users, the group object is assigned strict **Modify**, **Read & Execute**, and **List Folder Contents** NTFS permissions.
-* **User Nesting:** Nested target IT user entities (provisioned via automation) inside the `IT_Folders` Security Group to grant instant, compliant workspace access.
-
-### Permission Mapping Breakdown
-| Principal | NTFS Permission | Share Permission | Functional Result |
-| :--- | :--- | :--- | :--- |
-| `IT_Folders` (Security Group) | Modify, Read & Execute | Full Control | Full capability to read, write, edit, and create folders. |
-| `Domain Users` (All Personnel) | None (Explicitly Removed) | Read | Immediate "Access is Denied" security interception. |
-
-
-## 4. Systematic Triage & Infrastructure Auditing
-This section documents the diagnostic playbooks and auditing procedures established to maintain network availability and validate domain security baselines.
-
-### Case Studio A: Layer-3 Network Isolation Triage
-* **The Symptom:** The client workstation (`PC1`) unexpectedly drops communication with the domain controller, stalling user login events and displaying a native network resource execution error.
-* **The Diagnostic Pipeline:** 1. Initiated a localized command-line analysis on the endpoint running `ipconfig /all`.
-  2. Isolated an **Automatic Private IP Addressing (APIPA)** fault condition based on an auto-configured IP address return of `169.254.x.x`.
-  3. Identified that the client network card was completely unassigned by the centralized pool scope.
-  4. Traced the root cause to an unactivated scope configuration status on the Server DHCP daemon manager.
-* **The Remediation:** Activated the target scope pool on the Domain Controller, returned to the client command interface, and executed dynamic network lease recycling commands (`ipconfig /release` and `ipconfig /renew`). This successfully re-established communication and restored domain synchronization.
-
-### Case Studio B: Session State & Credential Conflict Remediations
-* **The Symptom:** When switching environments to test security group boundaries with alternate active user tokens, Windows throws a session execution collision error: *"The network folder specified is currently mapped using a different user name and password."*
-* **The Diagnostic Pipeline:** Local operating systems natively cache credential access tokens to network path objects. When changing user profiles quickly, the active session string maintains a limbo state, blocking new access permissions from applying.
-* **The Remediation:** Formulated a rapid terminal fix script to purge hidden, cached network shares and clear the execution cache without restarting the adapter card interface:
-```cmd
-:: Flush all active cached session tokens and force immediate connection teardowns
-net use * /delete /y
