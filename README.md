@@ -64,3 +64,21 @@ foreach ($User in $UserData) {
         Write-Warning "Target structural container path not found for: $TargetOU"
     }
 }
+
+## 3. Data Boundary Enforcement & Share Security (NTFS & RBAC)
+This section details the hardening of network storage systems, demonstrating how to enforce strict corporate data boundaries using nested permissions.
+
+### The Objective
+Configure an SMB network file share (`Company_Share`) hosted on the server so that only validated IT department personnel can access or modify administrative documentation, preventing privilege escalation or data leaks from unauthorized users.
+
+### Security Implementation Strategy
+To prevent administrative sprawl and ensure scalable security, the following access control parameters were implemented:
+* **Disabling File System Inheritance:** Stripped standard top-level directory inheritance rules from the local storage root (`C:\Company_Share`). This removed broad, default domain read/write permissions.
+* **Role-Based Access Control (RBAC):** Created an explicit Active Directory Security Group named `IT_Folders`. Instead of assigning local permissions to individual users, the group object is assigned strict **Modify**, **Read & Execute**, and **List Folder Contents** NTFS permissions.
+* **User Nesting:** Nested target IT user entities (provisioned via automation) inside the `IT_Folders` Security Group to grant instant, compliant workspace access.
+
+### Permission Mapping Breakdown
+| Principal | NTFS Permission | Share Permission | Functional Result |
+| :--- | :--- | :--- | :--- |
+| `IT_Folders` (Security Group) | Modify, Read & Execute | Full Control | Full capability to read, write, edit, and create folders. |
+| `Domain Users` (All Personnel) | None (Explicitly Removed) | Read | Immediate "Access is Denied" security interception. |
