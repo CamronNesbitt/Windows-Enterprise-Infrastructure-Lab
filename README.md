@@ -108,4 +108,18 @@ This section documents the diagnostic playbooks and auditing procedures establis
 :: Flush all active cached session tokens and force immediate connection teardowns
 net use * /delete /y
 
+```
+Case Study C: Centralized Security Auditing via Event Viewer
+The Objective: Validate identity security enforcement across the domain by mapping, capturing, and reading structural authentication failure logs without relying on end-user narrative.
 
+The Diagnostic Pipeline:
+
+Intentionally triggered an account lockout constraint by spamming mismatched authentication tokens at the client workstation interface.
+
+Transitioned to the Domain Controller administrative console and initialized the Windows Event Viewer.
+
+Navigated to the Windows Logs \ Security container and executed an explicit data filter query targeting Event ID 4740 (the native system receipt for a domain account lockout).
+
+Successfully parsed the log payload to extract the exact structural metadata footprint: the literal timestamp, target account identifier, and the caller workstation hardware footprint (PC1) responsible for the alert.
+
+The Auditing Code Blueprint: Formulated an automated administrative query snippet using PowerShell to instantly grab the lockout details directly into the console shell:
