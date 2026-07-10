@@ -82,3 +82,23 @@ To prevent administrative sprawl and ensure scalable security, the following acc
 | :--- | :--- | :--- | :--- |
 | `IT_Folders` (Security Group) | Modify, Read & Execute | Full Control | Full capability to read, write, edit, and create folders. |
 | `Domain Users` (All Personnel) | None (Explicitly Removed) | Read | Immediate "Access is Denied" security interception. |
+
+
+## 4. Systematic Triage & Infrastructure Auditing
+This section documents the diagnostic playbooks and auditing procedures established to maintain network availability and validate domain security baselines.
+
+### Case Studio A: Layer-3 Network Isolation Triage
+* **The Symptom:** The client workstation (`PC1`) unexpectedly drops communication with the domain controller, stalling user login events and displaying a native network resource execution error.
+* **The Diagnostic Pipeline:** 1. Initiated a localized command-line analysis on the endpoint running `ipconfig /all`.
+  2. Isolated an **Automatic Private IP Addressing (APIPA)** fault condition based on an auto-configured IP address return of `169.254.x.x`.
+  3. Identified that the client network card was completely unassigned by the centralized pool scope.
+  4. Traced the root cause to an unactivated scope configuration status on the Server DHCP daemon manager.
+* **The Remediation:** Activated the target scope pool on the Domain Controller, returned to the client command interface, and executed dynamic network lease recycling commands (`ipconfig /release` and `ipconfig /renew`). This successfully re-established communication and restored domain synchronization.
+
+### Case Studio B: Session State & Credential Conflict Remediations
+* **The Symptom:** When switching environments to test security group boundaries with alternate active user tokens, Windows throws a session execution collision error: *"The network folder specified is currently mapped using a different user name and password."*
+* **The Diagnostic Pipeline:** Local operating systems natively cache credential access tokens to network path objects. When changing user profiles quickly, the active session string maintains a limbo state, blocking new access permissions from applying.
+* **The Remediation:** Formulated a rapid terminal fix script to purge hidden, cached network shares and clear the execution cache without restarting the adapter card interface:
+```cmd
+:: Flush all active cached session tokens and force immediate connection teardowns
+net use * /delete /y
